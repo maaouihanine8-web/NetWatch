@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetWatch - Surveillance réseau</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <h1>NetWatch</h1>
+  <p>Surveillance et sécurité du réseau local{% if demo %} <span class="badge info">mode démo</span>{% endif %}</p>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+  {% endwith %}
+
+  <form method="post" action="{{ url_for('scan') }}" class="scan">
+    <label for="target">Réseau à scanner</label>
+    <input id="target" name="target" value="{{ target }}" placeholder="192.168.1.0/24" required>
+    <button type="submit">Lancer le scan</button>
+  </form>
+  <p class="hint">Scannez uniquement un réseau qui vous appartient ou pour lequel vous avez une autorisation.</p>
+
+  <section class="stats">
+    <div><strong>{{ stats.devices }}</strong><span>Appareils</span></div>
+    <div><strong>{{ stats.open_ports }}</strong><span>Ports ouverts</span></div>
+    <div><strong>{{ stats.alerts }}</strong><span>Alertes</span></div>
+    <div class="danger"><strong>{{ stats.high }}</strong><span>Alertes élevées</span></div>
+  </section>
+
+  <h2>Appareils connectés</h2>
+  {% if devices %}
+  <table>
+    <thead><tr><th>IP</th><th>Nom</th><th>Fabricant</th><th>MAC</th><th>Ports ouverts</th><th>Risque</th></tr></thead>
+    <tbody>
+    {% for d in devices %}
+      <tr>
+        <td>{{ d.ip }}</td>
+        <td>{{ d.hostname or "-" }}</td>
+        <td>{{ d.vendor or "inconnu" }}</td>
+        <td>{{ d.mac or "-" }}</td>
+        <td>{% for p in d.ports %}<span class="port">{{ p.port }}/{{ p.service }}</span>{% else %}aucun{% endfor %}</td>
+        <td><span class="badge {{ css(d.risk) }}">{{ d.risk }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Aucun appareil pour le moment. Lancez un scan.</p>
+  {% endif %}
+
+  <h2>Alertes de sécurité</h2>
+  {% if alerts %}
+  <ul class="alerts">
+    {% for a in alerts %}
+      <li><span class="badge {{ css(a.severity) }}">{{ a.severity }}</span>
+          <strong>{{ a.ip }}</strong> : {{ a.message }} <time>{{ a.created_at }}</time></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Aucune alerte.</p>
+  {% endif %}
+</main>
+</body>
+</html>
